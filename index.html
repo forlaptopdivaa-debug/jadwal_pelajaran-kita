@@ -32,12 +32,22 @@
       margin: auto;
     }
 
-    .form-box, .jadwal-box {
+    .form-box, .jadwal-box, .login-box {
       background: white;
       padding: 20px;
       border-radius: 16px;
       margin-bottom: 20px;
       box-shadow: 0 4px 12px #eac6d5;
+    }
+
+    .login-box {
+      max-width: 430px;
+      margin: 35px auto;
+    }
+
+    .login-box h1 {
+      text-align: center;
+      color: #d85f91;
     }
 
     input, select, button {
@@ -93,61 +103,188 @@
       color: #ad8495;
       font-size: 14px;
     }
+
+    .catatan {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #ad6687;
+      text-align: center;
+    }
+
+    #pesanLogin {
+      color: #c03965;
+      font-size: 14px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
   </style>
 </head>
 
 <body>
-  <header>
-    <h1>🎀 Jadwal Pelajaranku</h1>
-    <p>Belajar teratur, raih cita-citamu!</p>
-  </header>
 
-  <main class="container">
-    <section class="form-box">
-      <h2>Tambah Pelajaran ✏️</h2>
+  <!-- HALAMAN LOGIN -->
+  <main id="halamanLogin" class="login-box">
+    <h1>🎀 Selamat Datang!</h1>
 
-      <select id="hari">
-        <option value="Senin">Senin</option>
-        <option value="Selasa">Selasa</option>
-        <option value="Rabu">Rabu</option>
-        <option value="Kamis">Kamis</option>
-        <option value="Jumat">Jumat</option>
-      </select>
+    <p style="text-align:center;">
+      login dulu sebelum pake web ini ya
+    </p>
 
-      <input id="jam" type="text"
-        placeholder="Jam, contoh: 07.00 - 08.30">
+    <form id="formLogin">
+      <label for="namaLogin">Nama</label>
+      <input
+        id="namaLogin"
+        type="text"
+        placeholder="Masukkan nama"
+        autocomplete="username"
+        required
+      >
 
-      <input id="mapel" type="text"
-        placeholder="Nama mata pelajaran">
+      <label for="passwordLogin">Pasword</label>
+      <input
+        id="passwordLogin"
+        type="password"
+        placeholder="Masukkan pasword"
+        autocomplete="current-password"
+        required
+      >
 
-      <button onclick="tambahJadwal()">
-        + Tambah Jadwal
-      </button>
-    </section>
+      <button type="submit">Masuk ✨</button>
 
-    <section class="jadwal-box">
-      <h2>📚 Jadwal Mingguan</h2>
-      <div id="daftarJadwal"></div>
-    </section>
+      <p id="pesanLogin" role="status"></p>
+    </form>
+
+    <p class="catatan">
+      Pastikan teman² gunakan nama atau pasword
+      yang sama ya saat membukanya
+    </p>
   </main>
+
+  <!-- HALAMAN JADWAL PELAJARAN -->
+  <div id="halamanJadwal" hidden>
+
+    <header>
+      <h1>🎀 Jadwal Pelajaranku</h1>
+      <p>Belajar teratur, raih cita-citamu!</p>
+      <p id="sapaan"></p>
+      <button onclick="keluar()">Keluar</button>
+    </header>
+
+    <main class="container">
+
+      <section class="form-box">
+        <h2>Tambah Pelajaran ✏️</h2>
+
+        <select id="hari">
+          <option value="Senin">Senin</option>
+          <option value="Selasa">Selasa</option>
+          <option value="Rabu">Rabu</option>
+          <option value="Kamis">Kamis</option>
+          <option value="Jumat">Jumat</option>
+        </select>
+
+        <input
+          id="jam"
+          type="text"
+          placeholder="Jam, contoh: 07.00 - 08.30"
+        >
+
+        <input
+          id="mapel"
+          type="text"
+          placeholder="Nama mata pelajaran"
+        >
+
+        <button onclick="tambahJadwal()">
+          + Tambah Jadwal
+        </button>
+      </section>
+
+      <section class="jadwal-box">
+        <h2>📚 Jadwal Mingguan</h2>
+        <div id="daftarJadwal"></div>
+      </section>
+
+    </main>
+  </div>
 
   <script>
     const hariList = [
-      "Senin", "Selasa", "Rabu",
-      "Kamis", "Jumat"
+      "Senin", "Selasa", "Rabu", "Kamis", "Jumat"
     ];
 
-    let jadwal = JSON.parse(
-      localStorage.getItem("jadwalSekolah") || "[]"
-    );
+    let namaAktif = "";
+    let kunciJadwal = "";
+    let jadwal = [];
 
+    // LOGIN DAN PENDAFTARAN OTOMATIS
+    document.getElementById("formLogin")
+      .addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const nama = document.getElementById("namaLogin")
+          .value.trim();
+
+        const password = document.getElementById("passwordLogin")
+          .value;
+
+        const pesan = document.getElementById("pesanLogin");
+
+        if (!nama || !password) {
+          pesan.textContent = "Isi nama dan pasword dulu ya!";
+          return;
+        }
+
+        const namaKunci = nama.toLowerCase();
+        const kunciAkun = "akunJadwal_" + namaKunci;
+
+        let akun = localStorage.getItem(kunciAkun);
+
+        if (akun === null) {
+          // Nama baru akan membuat akun di browser ini.
+          akun = JSON.stringify({
+            nama: nama,
+            password: password
+          });
+
+          localStorage.setItem(kunciAkun, akun);
+        } else {
+          const dataAkun = JSON.parse(akun);
+
+          if (dataAkun.password !== password) {
+            pesan.textContent =
+              "Nama atau pasword salah. Coba lagi ya!";
+            return;
+          }
+        }
+
+        namaAktif = nama;
+        kunciJadwal = "jadwalPelajaran_" + namaKunci;
+
+        jadwal = JSON.parse(
+          localStorage.getItem(kunciJadwal) || "[]"
+        );
+
+        document.getElementById("halamanLogin").hidden = true;
+        document.getElementById("halamanJadwal").hidden = false;
+
+        document.getElementById("sapaan").textContent =
+          "Halo, " + namaAktif + "! Selamat belajar 💗";
+
+        tampilkanJadwal();
+      });
+
+    // SIMPAN JADWAL KHUSUS AKUN YANG SEDANG LOGIN
     function simpan() {
       localStorage.setItem(
-        "jadwalSekolah",
+        kunciJadwal,
         JSON.stringify(jadwal)
       );
     }
 
+    // TAMBAH JADWAL
     function tambahJadwal() {
       const hari = document.getElementById("hari").value;
       const jam = document.getElementById("jam").value.trim();
@@ -172,12 +309,14 @@
       document.getElementById("mapel").value = "";
     }
 
+    // HAPUS JADWAL
     function hapusJadwal(id) {
       jadwal = jadwal.filter(item => item.id !== id);
       simpan();
       tampilkanJadwal();
     }
 
+    // TAMPILKAN JADWAL
     function tampilkanJadwal() {
       const daftar = document.getElementById("daftarJadwal");
       daftar.replaceChildren();
@@ -221,11 +360,19 @@
       });
     }
 
-    // Hapus jadwal Sabtu lama jika tersimpan di browser.
-    jadwal = jadwal.filter(item => item.hari !== "Sabtu");
-    simpan();
+    // KELUAR DARI AKUN
+    function keluar() {
+      namaAktif = "";
+      kunciJadwal = "";
+      jadwal = [];
 
-    tampilkanJadwal();
+      document.getElementById("formLogin").reset();
+      document.getElementById("pesanLogin").textContent = "";
+
+      document.getElementById("halamanJadwal").hidden = true;
+      document.getElementById("halamanLogin").hidden = false;
+    }
   </script>
+
 </body>
 </html>

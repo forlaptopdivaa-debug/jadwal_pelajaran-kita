@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jadwal Pelajaranku</title>
+  <title>Jadwal Pelajaranku 🎀</title>
 
   <style>
     * {
@@ -46,8 +46,8 @@
     }
 
     .login-box h1 {
-      text-align: center;
       color: #d85f91;
+      text-align: center;
     }
 
     input, select, button {
@@ -128,7 +128,7 @@
   <main id="halamanLogin" class="login-box">
     <h1>🎀 Selamat Datang!</h1>
 
-    <p style="text-align:center;">
+    <p style="text-align:center">
       login dulu sebelum pake web ini ya
     </p>
 
@@ -139,6 +139,7 @@
         type="text"
         placeholder="Masukkan nama"
         autocomplete="username"
+        maxlength="50"
         required
       >
 
@@ -152,28 +153,24 @@
       >
 
       <button type="submit">Masuk ✨</button>
-
       <p id="pesanLogin" role="status"></p>
     </form>
 
     <p class="catatan">
-      Pastikan teman² gunakan nama atau pasword
-      yang sama ya saat membukanya
+      Pastikan teman² gunakan nama atau pasword yang sama ya saat membukanya
     </p>
   </main>
 
-  <!-- HALAMAN JADWAL PELAJARAN -->
+  <!-- HALAMAN JADWAL -->
   <div id="halamanJadwal" hidden>
-
     <header>
       <h1>🎀 Jadwal Pelajaranku</h1>
       <p>Belajar teratur, raih cita-citamu!</p>
       <p id="sapaan"></p>
-      <button onclick="keluar()">Keluar</button>
+      <button onclick="keluar()">Keluar dari akun</button>
     </header>
 
     <main class="container">
-
       <section class="form-box">
         <h2>Tambah Pelajaran ✏️</h2>
 
@@ -206,7 +203,6 @@
         <h2>📚 Jadwal Mingguan</h2>
         <div id="daftarJadwal"></div>
       </section>
-
     </main>
   </div>
 
@@ -219,53 +215,70 @@
     let kunciJadwal = "";
     let jadwal = [];
 
-    // LOGIN DAN PENDAFTARAN OTOMATIS
+    // LOGIN / BUAT AKUN
     document.getElementById("formLogin")
       .addEventListener("submit", function(event) {
         event.preventDefault();
 
-        const nama = document.getElementById("namaLogin")
-          .value.trim();
+        const nama = document
+          .getElementById("namaLogin").value.trim();
 
-        const password = document.getElementById("passwordLogin")
-          .value;
+        const password = document
+          .getElementById("passwordLogin").value;
 
-        const pesan = document.getElementById("pesanLogin");
+        const pesan = document
+          .getElementById("pesanLogin");
 
         if (!nama || !password) {
-          pesan.textContent = "Isi nama dan pasword dulu ya!";
+          pesan.textContent = "Nama dan pasword wajib diisi!";
           return;
         }
 
+        // Nama yang sama akan menggunakan akun yang sama.
         const namaKunci = nama.toLowerCase();
         const kunciAkun = "akunJadwal_" + namaKunci;
 
-        let akun = localStorage.getItem(kunciAkun);
+        let dataAkun = localStorage.getItem(kunciAkun);
 
-        if (akun === null) {
-          // Nama baru akan membuat akun di browser ini.
-          akun = JSON.stringify({
-            nama: nama,
-            password: password
-          });
-
-          localStorage.setItem(kunciAkun, akun);
+        if (dataAkun === null) {
+          // Nama baru: daftarkan password pertama kali.
+          localStorage.setItem(
+            kunciAkun,
+            JSON.stringify({
+              nama: nama,
+              password: password
+            })
+          );
         } else {
-          const dataAkun = JSON.parse(akun);
+          try {
+            dataAkun = JSON.parse(dataAkun);
+          } catch (error) {
+            pesan.textContent = "Data akun bermasalah.";
+            return;
+          }
 
           if (dataAkun.password !== password) {
             pesan.textContent =
-              "Nama atau pasword salah. Coba lagi ya!";
+              "Nama atau pasword salah! Gunakan data akun yang sama ya.";
             return;
           }
         }
 
+        // Setiap akun punya tempat penyimpanan jadwal sendiri.
         namaAktif = nama;
         kunciJadwal = "jadwalPelajaran_" + namaKunci;
 
-        jadwal = JSON.parse(
-          localStorage.getItem(kunciJadwal) || "[]"
-        );
+        try {
+          jadwal = JSON.parse(
+            localStorage.getItem(kunciJadwal) || "[]"
+          );
+
+          if (!Array.isArray(jadwal)) {
+            jadwal = [];
+          }
+        } catch (error) {
+          jadwal = [];
+        }
 
         document.getElementById("halamanLogin").hidden = true;
         document.getElementById("halamanJadwal").hidden = false;
@@ -276,16 +289,23 @@
         tampilkanJadwal();
       });
 
-    // SIMPAN JADWAL KHUSUS AKUN YANG SEDANG LOGIN
+    // SIMPAN JADWAL AKUN AKTIF
     function simpan() {
+      if (!kunciJadwal) return;
+
       localStorage.setItem(
         kunciJadwal,
         JSON.stringify(jadwal)
       );
     }
 
-    // TAMBAH JADWAL
+    // TAMBAH PELAJARAN
     function tambahJadwal() {
+      if (!kunciJadwal) {
+        alert("Silakan login terlebih dahulu!");
+        return;
+      }
+
       const hari = document.getElementById("hari").value;
       const jam = document.getElementById("jam").value.trim();
       const mapel = document.getElementById("mapel").value.trim();
@@ -309,14 +329,14 @@
       document.getElementById("mapel").value = "";
     }
 
-    // HAPUS JADWAL
+    // HAPUS PELAJARAN
     function hapusJadwal(id) {
       jadwal = jadwal.filter(item => item.id !== id);
       simpan();
       tampilkanJadwal();
     }
 
-    // TAMPILKAN JADWAL
+    // TAMPILKAN JADWAL AKUN
     function tampilkanJadwal() {
       const daftar = document.getElementById("daftarJadwal");
       daftar.replaceChildren();
@@ -360,7 +380,7 @@
       });
     }
 
-    // KELUAR DARI AKUN
+    // KELUAR AKUN TANPA MENGHAPUS JADWAL
     function keluar() {
       namaAktif = "";
       kunciJadwal = "";
